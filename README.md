@@ -1,4 +1,4 @@
-# Speech Emotion Analysis
+# Speech Emotion Analysis by Chirag N
 
 This project is a web application that allows users to analyze the emotion in speech. Users must sign up and log in to use the application. The application uses Flask for the web framework, SQLAlchemy for the database, and various libraries for audio processing and emotion prediction.
 
