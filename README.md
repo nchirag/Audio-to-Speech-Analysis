@@ -4,7 +4,6 @@ This project is a web application that allows users to analyze the emotion in sp
 
 ## Features
 
-- User authentication (sign up, log in, log out)
 - Upload audio files for emotion analysis
 - Convert audio to text using SpeechRecognition
 - Predict emotion from text using a pre-trained model
