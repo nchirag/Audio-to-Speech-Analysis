@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech Emotion Analysis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* General Styles */
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(to bottom right, #ffffff, #e3f2fd); /* White to Light Blue */
+            margin: 0;
+            padding: 20px;
+            color: #333; /* Neutral dark text */
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.8em;
+            margin-bottom: 20px;
+            color: #1565c0; /* Deep Blue */
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        h2 {
+            margin-top: 30px;
+            font-size: 2em;
+            color: #ff6f00; /* Vibrant Orange */
+        }
+
+        button {
+            background-color: #29b6f6; /* Light Blue */
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 18px;
+            margin: 10px 5px;
+            cursor: pointer;
+            border-radius: 25px; /* Rounded buttons */
+            transition: all 0.3s ease-in-out;
+        }
+
+        button:hover {
+            background-color: #0288d1; /* Darker Blue */
+            transform: scale(1.05);
+        }
+
+        button[disabled] {
+            background-color: #bdbdbd; /* Grey for disabled buttons */
+            cursor: not-allowed;
+        }
+
+        p {
+            font-size: 18px;
+        }
+
+        strong {
+            font-weight: bold;
+        }
+
+        #status {
+            font-size: 20px;
+            margin-top: 20px;
+            color: #ff6f00; /* Vibrant Orange for status messages */
+        }
+
+        #resultText, #resultEmotion {
+            font-weight: bold;
+        }
+
+        #resultText {
+            color: #43a047; /* Green for Text Result */
+        }
+
+        #resultEmotion {
+            color: #d32f2f; /* Red for Emotion Result */
+        }
+
+        .container {
+            background-color: white; /* Clean white container */
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+        }
+
+        .stickers {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .sticker {
+            width: 80px; /* Adjust size as needed */
+            margin: 10px; /* Space between stickers */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Speech Emotion Analysis</h1>
+        
+        <!-- Stickers/Icons -->
+        <div class="stickers">
+            <img src="https://img.icons8.com/ios-filled/100/1565c0/microphone.png" alt="Microphone" class="sticker"/>
+            <img src="https://img.icons8.com/ios-filled/100/ff6f00/sad.png" alt="Sad Face" class="sticker"/>
+            <img src="https://img.icons8.com/ios-filled/100/43a047/happy.png" alt="Happy Face" class="sticker"/>
+        </div>
+
+        <button id="recordBtn">Start Recording</button>
+        <button id="stopBtn" disabled>Stop Recording</button>
+        
+        <p id="status"></p>
+        
+        <h2>Results:</h2>
+        
+        <p><strong>Text:</strong> <span id="resultText"></span></p>
+        
+        <p><strong>Emotion:</strong> <span id="resultEmotion"></span></p>
+    </div>
+
+    <script>
+        let mediaRecorder;
+        let audioChunks = [];
+
+        document.getElementById("recordBtn").addEventListener("click", async () => {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            
+            mediaRecorder = new MediaRecorder(stream);
+
+           mediaRecorder.ondataavailable = (event) => {
+                audioChunks.push(event.data);
+           };
+
+           mediaRecorder.onstop = async () => {
+                const blob = new Blob(audioChunks, { type: "audio/wav" });
+                const formData = new FormData();
+                formData.append("audio", blob, "live_audio.wav");
+
+                document.getElementById("status").innerText = "Processing...";
+                
+                const response = await fetch("/analyze", {
+                    method: "POST",
+                    body: formData,
+                });
+
+                const result = await response.json();
+                
+                if (result.error) {
+                    document.getElementById("status").innerText = result.error;
+                } else {
+                    document.getElementById("status").innerText = "Analysis Complete!";
+                    document.getElementById("resultText").innerText = result.text || "No text detected.";
+                    document.getElementById("resultEmotion").innerText = result.emotion || "No emotion detected.";
+                }
+                
+                audioChunks = []; // Clear audio chunks after processing
+           };
+
+           audioChunks = [];
+           mediaRecorder.start();
+           document.getElementById("recordBtn").disabled = true;
+           document.getElementById("stopBtn").disabled = false;
+
+           // Optional visual feedback during recording
+           document.getElementById("recordBtn").innerText = "Recording...";
+       });
+
+       document.getElementById("stopBtn").addEventListener("click", () => {
+           mediaRecorder.stop();
+           document.getElementById("recordBtn").disabled = false;
+
+           document.getElementById("stopBtn").disabled = true;
+
+           // Reset button text after stopping
+           document.getElementById("recordBtn").innerText = "Start Recording";
+       });
+    </script>
+</body>
+</html>
