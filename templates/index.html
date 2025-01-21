@@ -9,18 +9,19 @@
         /* General Styles */
         body {
             font-family: 'Roboto', sans-serif;
-            background: linear-gradient(to bottom right, #ffffff, #e3f2fd); /* White to Light Blue */
+            background: #121212; /* Dark background */
             margin: 0;
             padding: 20px;
-            color: #333; /* Neutral dark text */
+            color: #e0e0e0; /* Light gray text for contrast */
             text-align: center;
+            overflow: hidden; /* Prevent scrollbars */
         }
 
         h1 {
             font-size: 2.8em;
             margin-bottom: 20px;
-            color: #1565c0; /* Deep Blue */
-            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+            color: #ffab00; /* Bright Yellow */
+            text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.5);
         }
 
         h2 {
@@ -30,7 +31,7 @@
         }
 
         button {
-            background-color: #29b6f6; /* Light Blue */
+            background-color: #1e88e5; /* Blue */
             border: none;
             color: white;
             padding: 15px 30px;
@@ -41,16 +42,16 @@
             margin: 10px 5px;
             cursor: pointer;
             border-radius: 25px; /* Rounded buttons */
-            transition: all 0.3s ease-in-out;
+            transition: all 0.3s ease-in-out, transform 0.2s ease; /* Smooth transitions */
         }
 
         button:hover {
-            background-color: #0288d1; /* Darker Blue */
-            transform: scale(1.05);
+            background-color: #1565c0; /* Darker Blue on hover */
+            transform: scale(1.05) rotate(2deg); /* Slight rotation on hover */
         }
 
         button[disabled] {
-            background-color: #bdbdbd; /* Grey for disabled buttons */
+            background-color: #757575; /* Grey for disabled buttons */
             cursor: not-allowed;
         }
 
@@ -65,7 +66,7 @@
         #status {
             font-size: 20px;
             margin-top: 20px;
-            color: #ff6f00; /* Vibrant Orange for status messages */
+            color: #ffab00; /* Bright Yellow for status messages */
         }
 
         #resultText, #resultEmotion {
@@ -81,10 +82,11 @@
         }
 
         .container {
-            background-color: white; /* Clean white container */
+            background-color: rgba(255, 255, 255, 0.1); /* Semi-transparent white for contrast */
             border-radius: 15px;
             padding: 30px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5); /* Soft shadow for depth */
+            position: relative; /* For positioning stickers */
         }
 
         .stickers {
@@ -96,30 +98,35 @@
         .sticker {
             width: 80px; /* Adjust size as needed */
             margin: 10px; /* Space between stickers */
+            transition: transform 0.3s ease; /* Smooth transition for hover effects */
+        }
+
+        .sticker:hover {
+            transform: scale(1.2) rotate(10deg); /* Rotate and enlarge on hover */
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Speech Emotion Analysis</h1>
-        
-        <!-- Stickers/Icons -->
-        <div class="stickers">
-            <img src="https://img.icons8.com/ios-filled/100/1565c0/microphone.png" alt="Microphone" class="sticker"/>
-            <img src="https://img.icons8.com/ios-filled/100/ff6f00/sad.png" alt="Sad Face" class="sticker"/>
-            <img src="https://img.icons8.com/ios-filled/100/43a047/happy.png" alt="Happy Face" class="sticker"/>
-        </div>
+      <h1>Speech Emotion Analysis</h1>
+      
+      <!-- Stickers/Icons -->
+      <div class="stickers">
+          <img src="https://img.icons8.com/ios-filled/100/ffab00/microphone.png" alt="Microphone" class="sticker"/>
+          <img src="https://img.icons8.com/ios-filled/100/ff6f00/sad.png" alt="Sad Face" class="sticker"/>
+          <img src="https://img.icons8.com/ios-filled/100/43a047/happy.png" alt="Happy Face" class="sticker"/>
+      </div>
 
-        <button id="recordBtn">Start Recording</button>
-        <button id="stopBtn" disabled>Stop Recording</button>
-        
-        <p id="status"></p>
-        
-        <h2>Results:</h2>
-        
-        <p><strong>Text:</strong> <span id="resultText"></span></p>
-        
-        <p><strong>Emotion:</strong> <span id="resultEmotion"></span></p>
+      <button id="recordBtn">Start Recording</button>
+      <button id="stopBtn" disabled>Stop Recording</button>
+      
+      <p id="status"></p>
+      
+      <h2>Results:</h2>
+      
+      <p><strong>Text:</strong> <span id="resultText"></span></p>
+      
+      <p><strong>Emotion:</strong> <span id="resultEmotion"></span></p>
     </div>
 
     <script>
@@ -127,37 +134,37 @@
         let audioChunks = [];
 
         document.getElementById("recordBtn").addEventListener("click", async () => {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            
-            mediaRecorder = new MediaRecorder(stream);
+           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+           
+           mediaRecorder = new MediaRecorder(stream);
 
            mediaRecorder.ondataavailable = (event) => {
-                audioChunks.push(event.data);
+               audioChunks.push(event.data);
            };
 
            mediaRecorder.onstop = async () => {
-                const blob = new Blob(audioChunks, { type: "audio/wav" });
-                const formData = new FormData();
-                formData.append("audio", blob, "live_audio.wav");
+               const blob = new Blob(audioChunks, { type: "audio/wav" });
+               const formData = new FormData();
+               formData.append("audio", blob, "live_audio.wav");
 
-                document.getElementById("status").innerText = "Processing...";
-                
-                const response = await fetch("/analyze", {
-                    method: "POST",
-                    body: formData,
-                });
+               document.getElementById("status").innerText = "Processing...";
+               
+               const response = await fetch("/analyze", {
+                   method: "POST",
+                   body: formData,
+               });
 
-                const result = await response.json();
-                
-                if (result.error) {
-                    document.getElementById("status").innerText = result.error;
-                } else {
-                    document.getElementById("status").innerText = "Analysis Complete!";
-                    document.getElementById("resultText").innerText = result.text || "No text detected.";
-                    document.getElementById("resultEmotion").innerText = result.emotion || "No emotion detected.";
-                }
-                
-                audioChunks = []; // Clear audio chunks after processing
+               const result = await response.json();
+               
+               if (result.error) {
+                   document.getElementById("status").innerText = result.error;
+               } else {
+                   document.getElementById("status").innerText = "Analysis Complete!";
+                   document.getElementById("resultText").innerText = result.text || "No text detected.";
+                   document.getElementById("resultEmotion").innerText = result.emotion || "No emotion detected.";
+               }
+               
+               audioChunks = []; // Clear audio chunks after processing
            };
 
            audioChunks = [];
